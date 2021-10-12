@@ -25,10 +25,9 @@ class MangaController extends Controller {
         $erreur = Session::get('erreur');
         Session::forget('erreur');
         // On récupère l'utilisateur en cours pour pouvoir accéder à son jeton d'authentification
-        $user = Auth::guard()->user();
+
         $client = new Client();
-        $response = $client->request('GET', 'http://localhost/mangasworldAPI/public/api/manga', 
-                ['headers' => ['Authorization' => 'Bearer ' . $user->api_token]]);
+        $response = $client->request('GET', 'http://localhost/mangasworldAPI/public/api/manga');
         $mangas = json_decode($response->getBody()->getContents());
         // On affiche la liste de ces mangas        
         return view('listeMangas', compact('mangas', 'erreur'));
@@ -50,10 +49,9 @@ class MangaController extends Controller {
         // Si on a un id de genre
         if ($id_genre) {
             // On récupère la liste de tous les mangas du genre choisi
-            $user = Auth::guard()->user();
             $client = new Client();
             $uri = 'http://localhost/mangasworldAPI/public/api/manga/genre/' . $id_genre;
-            $response = $client->request('GET', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token]]);
+            $response = $client->request('GET', $uri);
             $mangas = json_decode($response->getBody()->getContents());
             // On affiche la liste de ces mangas
             return view('/listeMangas', compact('mangas', 'erreur'));

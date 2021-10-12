@@ -16,10 +16,9 @@ class GenreController extends Controller {
     public function getGenres() {
         $erreur = Session::get('erreur');
         Session::forget('erreur');
-        $user = Auth::guard()->user();
         $client = new Client();
         $uri = 'http://localhost/mangasworldAPI/public/api/genre';
-        $response = $client->request('GET', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token]]);
+        $response = $client->request('GET', $uri);
         $genres = json_decode($response->getBody()->getContents());
         return $genres;
     }

@@ -23,10 +23,9 @@ class CommentaireController extends Controller {
         $erreur = Session::get('erreur');
         Session::forget('erreur');
         // On récupère la liste de tous les commentaires
-        $user = Auth::guard()->user();
         $client = new Client();
-        $uri = 'http://localhost/mangasworldAPI/public/api/manga/' . $idManga;
-        $response = $client->request('GET', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token]]);
+        $uri = 'http://localhost/mangasworldAPI/public/api/commentaire/manga/' . $idManga;
+        $response = $client->request('GET', $uri);
         $manga = json_decode($response->getBody()->getContents());
         $commentaires = $manga->commentaires;
         // On affiche la liste de ces mangas        
@@ -48,16 +47,22 @@ class CommentaireController extends Controller {
         $readonly = null;
         $erreur = Session::get('erreur');
         Session::forget('erreur');
-        /* A compléter */
+        $user = Auth::guard()->user();
+        $client = new Client();
+        $uri = 'http://localhost/mangasworldAPI/public/api/commentaire/' . $idCommentaire;
+        $response = $client->request('GET', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token]]);
+        $commentaire = json_decode($response->getBody()->getContents());
+        $manga = Manga::find($commentaire->id_manga);
         $titreVue = "Modification d'un Commentaire";
         $user = Auth::user();
         if ($user != null) {
-            if (!$user->role == 'comment' && $user->id == $commentaire->id_lecteur) {
-                $erreur = 'Vous ne pourrez que consulter ce commentaire, mais pas le modifier';
+            if (!($user->role == 'comment' && $user->id == $commentaire->id_lecteur)) {
+                $erreur = 'Vous ne pouvez que consulter ce commentaire, mais pas le modifier';
                 $readonly = 'readonly';
             }
         }
         // Affiche le formulaire en lui fournissant les données à afficher
+        // return $commentaire;
         return view('formCommentaire', compact('manga', 'commentaire', 'titreVue', 'readonly', 'erreur'));
     }
 
@@ -75,12 +80,16 @@ class CommentaireController extends Controller {
         $readonly = null;
         $erreur = Session::get('erreur');
         Session::forget('erreur');
-        /* A compléter */
+        $user = Auth::guard()->user();
+        $client = new Client();
+        $uri = 'http://localhost/mangasworldAPI/public/api/commentaire/' . $idCommentaire;
+        $response = $client->request('GET', $uri);
+        $commentaire = json_decode($response->getBody()->getContents());
+        $manga = Manga::find($commentaire->id_manga);
         $titreVue = "Consultation d'un Commentaire";
-        $user = Auth::user();
         if ($user != null) {
             if (!$user->role == 'comment' && $user->id == $commentaire->id_lecteur) {
-                $erreur = 'Vous ne pourrez que consulter ce commentaire, mais pas le modifier';
+                $erreur = 'Vous ne pouvez que consulter ce commentaire, mais pas le modifier';
                 $readonly = 'readonly';
             }
         } else{

@@ -19,7 +19,18 @@ class Commentaire extends Model
     public function lecteur()
     {
         return $this->belongsTo('App\Models\Lecteur', 'id_lecteur', 'id_lecteur');
-    }    
+    }
+
+    /**
+     * Redéfinit toArray() de Model pour former
+     * un tableau des propriétés simples
+     * @return type tableau de propriétés
+     */
+    public function toArray() {
+        $data = parent::toArray();
+        $data['lecteur'] = $this->lecteur;
+        return $data;
+    }  
       
     
 }
