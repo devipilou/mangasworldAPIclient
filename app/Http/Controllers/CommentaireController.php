@@ -6,8 +6,10 @@ use Request;
 use Exception;
 use Session;
 use Illuminate\Support\Facades\Auth;
+use Validator;
 use App\Models\Commentaire;
 use App\Models\Manga;
+use App\Models\Lecteur;
 use GuzzleHttp\Client;
 
 
@@ -113,17 +115,47 @@ class CommentaireController extends Controller {
         // Récupération des valeurs saisies
         $idManga = Request::input('id_manga'); // id dans le champs caché
         $idCommentaire = Request::input('id_commentaire'); // id dans le champs caché
-        $libCommentaire = Request::input('lib_commentaire');
-        if ($idCommentaire > 0) {
-            /* A compléter */
-        } else {
-            $commentaire = new Commentaire();
+        //validation de la présence des données
+        $regles = array(
+            'lib_commentaire'=>'required',
+        );
+        $messages = array(
+            'lib_commentaire.required' => 'Il faut saisir un commentaire',
+        );
+        $validator = Validator::make(Request::all(),$regles, $messages);
+        // On retourne au formulaire s'il y a un problème
+        if($validator->fails()){
+            if($idCommentaire>0){
+                return redirect ('modifierCommentaire/' .$idCommentaire)
+                ->withErrors($validator)
+                ->withInput();
+            }else{
+                return redirect ('ajouterCommentaire/' .$idManga)
+                ->withErrors($validator)
+                ->withInput();
+            }
         }
+        $libCommentaire = Request::input('lib_commentaire');
+
+        $user = Auth::guard()->user();
+        $client = new Client();
+        $uri = 'http://localhost/mangasworldAPI/public/api/commentaire';
+        $commentaire = new Commentaire();
         $commentaire->lib_commentaire = $libCommentaire;
         $commentaire->id_lecteur = Auth::user()->id;
         $commentaire->id_manga = $idManga;
+
         try {
-            /* A compléter */
+            if ($idCommentaire > 0) {
+                $commentaire->id_commentaire = $idCommentaire;
+                $data = $commentaire->toArray();
+                $response = $client->request('PUT', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token], 'query' => $data]);
+                $commentaire = json_decode($response->getBody()->getContents());
+            } else {
+                $data = $commentaire->toArray();
+                $response = $client->request('POST', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token], 'query' => $data]);
+                $commentaire = json_decode($response->getBody()->getContents());
+            }
         } catch (Exception $ex) {
             $erreur = $ex->getMessage();
             Session::put('erreur', $erreur);
@@ -148,7 +180,7 @@ class CommentaireController extends Controller {
             return $this->getCommentaires($idManga);
         }
         $commentaire = new Commentaire();
-        /* A compléter */
+        $manga = Manga::find($idManga);
         $titreVue = "Ajout d'un Commentaire";
         // Affiche le formulaire en lui fournissant les données à afficher
         return view('formCommentaire', compact('manga', 'commentaire', 'titreVue', 'readonly', 'erreur'));
@@ -165,15 +197,17 @@ class CommentaireController extends Controller {
      */
     public function deleteCommentaire($idCommentaire, $idManga) {
         $erreur = "";
+        $commentaire = Commentaire::find($idCommentaire);
         try {
-            /* A compléter */
             $user = Auth::user();
-            if (!$user->role == 'comment' && $user->id == $commentaire->id_lecteur) {
+            if (!($user->role == 'comment' && $user->id == $commentaire->id_lecteur)) {
                 $erreur = 'Vous ne pouvez supprimer que vos propres commentaires !';
                 Session::put('erreur', $erreur);
                 return $this->getCommentaires($commentaire->id_manga);
             }
-            /* A compléter */
+            $client = new Client();
+            $uri = 'http://localhost/mangasworldAPI/public/api/commentaire/' . $idCommentaire;
+            $response = $client->request('DELETE', $uri, ['headers' => ['Authorization' => 'Bearer ' . $user->api_token]]);
             // On réaffiche la liste des commentaires
             return redirect('/listerCommentaires/' . $idManga);
         } catch (Exception $ex) {
